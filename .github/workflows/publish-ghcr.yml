@@ -1,0 +1,35 @@
+name: Publish GHCR
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["backend/**", "frontend/**", "flaresolverr/**", ".github/workflows/publish-ghcr.yml"]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - dir: backend
+            tag: ghcr.io/onepush-dev/thingport-backend:1.5.0
+          - dir: frontend
+            tag: ghcr.io/onepush-dev/thingport-frontend:1.5.0
+          - dir: flaresolverr
+            tag: ghcr.io/onepush-dev/thingport-flaresolverr:3.5.2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.dir }}
+          push: true
+          tags: ${{ matrix.tag }}
+          platforms: linux/amd64

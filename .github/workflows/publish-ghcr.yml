@@ -16,7 +16,7 @@ jobs:
           - dir: backend
             tag: ghcr.io/onepush-dev/thingport-backend:1.5.0-r2
           - dir: frontend
-            tag: ghcr.io/onepush-dev/thingport-frontend:1.5.0
+            tag: ghcr.io/onepush-dev/thingport-frontend:1.5.0-r2
           - dir: flaresolverr
             tag: ghcr.io/onepush-dev/thingport-flaresolverr:3.5.2
     steps:

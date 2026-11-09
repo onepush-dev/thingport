@@ -18,6 +18,17 @@ if [ ! -f "$MARKER" ] && [ -n "${THINGPORT_ADMIN_PASSWORD:-}" ]; then
   body=$(printf '{"displayName":"%s","email":"%s","password":"%s"}' "${THINGPORT_ADMIN_NAME:-Admin}" "${THINGPORT_ADMIN_EMAIL:-admin@example.com}" "$THINGPORT_ADMIN_PASSWORD")
   if out=$(wget -q -O - --header 'Content-Type: application/json' --post-data "$body" http://127.0.0.1:8001/api/register 2>&1); then
     touch "$MARKER"; echo "[railway] owner account created (${THINGPORT_ADMIN_EMAIL:-admin@example.com})"
+    # Upstream leaves open sign-up on after the owner exists; close it (invites still work).
+    # Set THINGPORT_OPEN_REGISTRATIONS=true to keep it open.
+    if [ "${THINGPORT_OPEN_REGISTRATIONS:-false}" != "true" ]; then
+      tok=$(printf '%s' "$out" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{process.stdout.write(JSON.parse(d).token||"")}catch{}})')
+      if [ -n "$tok" ] && wget -q -O /dev/null --header "Authorization: Bearer $tok" --header 'Content-Type: application/json' \
+          --post-data '{"allow_registrations":false}' http://127.0.0.1:8001/api/settings/registrations; then
+        echo "[railway] public sign-up closed (invite people from Administration)"
+      else
+        echo "[railway] WARNING: could not close public sign-up; turn it off in Administration" >&2
+      fi
+    fi
   else
     echo "[railway] owner registration failed: $out" >&2
   fi
